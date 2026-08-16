@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カイゼン目安箱 — 現場の声を、つくる人へ</title>
+<meta name="description" content="自治体・現場企業の『困った』を集めるDX投書板。ハッカソン練習用デモ。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='8' fill='%23cb3a2a'/%3E%3Ctext x='32' y='46' font-size='38' text-anchor='middle' fill='%23f7f3ec' font-family='serif' font-weight='bold'%3E目%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ───────────────────────── masthead ───────────────────────── -->
+<header class="masthead">
+  <div class="topbar">
+    <span class="topbar-form">様式第1号（第2条関係）</span>
+    <span class="topbar-title">GENBA VOICE BOARD — DX REQUEST ARCHIVE</span>
+    <span class="topbar-date" id="todayLabel"></span>
+  </div>
+
+  <div class="hero">
+    <div class="hero-main">
+      <p class="kicker"><span class="kicker-dot"></span>自治体・現場企業のための業務改善 投書板</p>
+      <h1 class="hero-title">
+        <span class="hero-title-line">カイゼン</span>
+        <span class="hero-title-line accent">目安箱</span>
+      </h1>
+      <p class="lede">
+        現場の「困った」は、宝の山。<br>
+        窓口で、工場で、避難所で——毎日すり減っている時間を、<br class="pc-only">
+        つくる人に届けるための投書板です。
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="openFormBtn">
+          <span class="btn-stamp-icon" aria-hidden="true">投</span>投書する
+        </button>
+        <button class="btn btn-ghost" id="sortSevereBtn">切実な順に見る →</button>
+      </div>
+    </div>
+
+    <aside class="hero-stats" aria-label="集計">
+      <div class="stat">
+        <span class="stat-num" id="statPosts">0</span>
+        <span class="stat-label">投書</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num accent" id="statVotes">0</span>
+        <span class="stat-label">うちも困ってる</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statSolved">0</span>
+        <span class="stat-label">解決済</span>
+      </div>
+    </aside>
+
+    <div class="hero-bigstamp" aria-hidden="true"><span>目安箱</span></div>
+    <p class="tategaki" aria-hidden="true">声なき声を、聞け。</p>
+  </div>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+</header>
+
+<!-- ───────────────────────── toolbar ───────────────────────── -->
+<section class="toolbar" aria-label="絞り込み">
+  <div class="toolbar-row">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+      <input type="search" id="searchInput" class="search-input" placeholder="キーワードで探す（例：FAX、転記、紙…）" aria-label="検索">
+    </div>
+    <div class="org-tabs" id="orgTabs" role="tablist" aria-label="組織で絞り込み"></div>
+    <div class="sort-wrap">
+      <label class="sort-label" for="sortSelect">並び順</label>
+      <select id="sortSelect" class="sort-select">
+        <option value="new">新着順</option>
+        <option value="votes">共感が多い順</option>
+        <option value="severe">切実な順</option>
+      </select>
+    </div>
+  </div>
+  <div class="chips" id="catChips" role="group" aria-label="カテゴリで絞り込み"></div>
+</section>
+
+<!-- ───────────────────────── list ───────────────────────── -->
+<main class="board">
+  <div class="board-head">
+    <h2 class="board-title">投書一覧</h2>
+    <span class="board-count mono" id="resultCount"></span>
+  </div>
+  <ol class="cards" id="cardList"></ol>
+  <div class="empty" id="emptyState" hidden>
+    <div class="empty-stamp">該当なし</div>
+    <p>条件に合う投書が見つかりませんでした。<br>絞り込みを変えるか、あなたが最初の投書者になってください。</p>
+    <button class="btn btn-primary" data-open-form>投書する</button>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <p class="footer-note">この投書板はハッカソン練習用のデモです。投書・共感・追記はこの端末のブラウザにのみ保存されます。</p>
+    <p class="footer-form mono">様式第1号（第2条関係）／ カイゼン目安箱 GENBA VOICE BOARD ／ A4縦・長期保存</p>
+  </div>
+</footer>
+
+<!-- ───────────────────────── detail modal ───────────────────────── -->
+<div class="modal" id="detailModal" hidden>
+  <div class="modal-scrim" data-close></div>
+  <article class="sheet" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <button class="sheet-close" data-close aria-label="閉じる">×</button>
+    <div id="detailBody"></div>
+  </article>
+</div>
+
+<!-- ───────────────────────── form modal ───────────────────────── -->
+<div class="modal" id="formModal" hidden>
+  <div class="modal-scrim" data-close></div>
+  <article class="sheet" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <button class="sheet-close" data-close aria-label="閉じる">×</button>
+    <header class="sheet-head">
+      <p class="sheet-form-no mono">様式第1号</p>
+      <h2 class="sheet-title" id="formTitle">業務改善 投書票</h2>
+      <p class="sheet-sub">現場のリアルな「困った」を、遠慮なくどうぞ。具体的な数字があると開発者に刺さります。</p>
+    </header>
+    <form id="postForm" class="form" novalidate>
+      <div class="form-grid">
+        <label class="field">
+          <span class="field-label">組織の種類 <em>必須</em></span>
+          <select name="org" required>
+            <option value="">選択してください</option>
+            <option>自治体</option>
+            <option>製造業</option>
+            <option>建設業</option>
+            <option>医療・福祉</option>
+            <option>小売・サービス</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">部署・現場名 <em>必須</em></span>
+          <input type="text" name="dept" placeholder="例：市民課、製造部 保全グループ" required>
+        </label>
+        <label class="field">
+          <span class="field-label">カテゴリ <em>必須</em></span>
+          <select name="category" required id="formCategory">
+            <option value="">選択してください</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">お名前（任意・匿名可）</span>
+          <input type="text" name="author" placeholder="例：窓口係 10年目">
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field-label">タイトル <em>必須</em>（「〜がつらい」「〜に◯時間かかる」形式がおすすめ）</span>
+        <input type="text" name="title" placeholder="例：FAXの注文書を毎日2時間手入力している" required maxlength="60">
+      </label>
+
+      <label class="field">
+        <span class="field-label">現状のやり方 <em>必須</em></span>
+        <textarea name="current" rows="3" placeholder="いま、その業務をどう回していますか？（紙／Excel／電話／口頭 など）" required></textarea>
+      </label>
+
+      <label class="field">
+        <span class="field-label">何がつらいか <em>必須</em></span>
+        <textarea name="pain" rows="3" placeholder="かかっている時間、起きているミス、しわ寄せが行っている人…" required></textarea>
+      </label>
+
+      <label class="field">
+        <span class="field-label">こうなったら最高（任意）</span>
+        <textarea name="hope" rows="2" placeholder="理想の姿。ツールの名前が分からなくてもOKです。"></textarea>
+      </label>
+
+      <div class="form-grid">
+        <fieldset class="field radio-field">
+          <legend class="field-label">発生頻度 <em>必須</em></legend>
+          <div class="radio-row" role="radiogroup">
+            <label><input type="radio" name="freq" value="毎日" required><span>毎日</span></label>
+            <label><input type="radio" name="freq" value="毎週"><span>毎週</span></label>
+            <label><input type="radio" name="freq" value="毎月"><span>毎月</span></label>
+            <label><input type="radio" name="freq" value="随時"><span>随時</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="field radio-field">
+          <legend class="field-label">業務への影響 <em>必須</em></legend>
+          <div class="radio-row" role="radiogroup">
+            <label><input type="radio" name="impact" value="1" required><span>小</span></label>
+            <label><input type="radio" name="impact" value="2"><span>中</span></label>
+            <label><input type="radio" name="impact" value="3"><span>大</span></label>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="form-foot">
+        <p class="form-note">投書はこの端末にのみ保存されます（デモ）。</p>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <span class="btn-stamp-icon" aria-hidden="true">受</span>この内容で投書する
+        </button>
+      </div>
+    </form>
+  </article>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
